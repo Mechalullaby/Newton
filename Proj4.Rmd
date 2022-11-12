@@ -1,0 +1,187 @@
+---
+title: "Proj.4"
+author: "Stacey"
+date: "2022-11-12"
+output: html_document
+---
+
+```{r function struction}
+newt <- function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
+     maxit=100,max.half=20,eps=1e-6){
+  
+  # value of objective function of initial theta
+  f <- func(theta, ...)
+  # gradient of initial theta
+  gradient <- grad(theta, ...)
+  # call the Hessian matrix
+  hess <- hess(theta, ...)
+
+  # iter is the iteration time
+  iter <-  0
+  # n is the dimension of theta
+  n <- length(theta)
+
+  while (iter < maxit){
+    if (max(abs(gradient)) < (abs(f)+fscale)*tol){
+      # return sentence to tell now is convergent
+      cat("This iteration is converged \n")
+      # Judge whether the Hessian is positive definite
+      decom <- try(chol(hess))
+      # if the try class in error
+      if("try-error" %in% class(fit)){
+        # if the Hessian is not positive definite, 
+        # give the warning
+        warning("The Hessian is not positive definite 
+              at convergence")
+        } 
+      # Cholesky decomposition of the Hessian 
+      R <- chol(hess) 
+      # solve the H^-1
+      invH <- backsolve(R,forwardsolve(t(R),diag(rep(1,n))))
+      # return a list of containing the converged iteration result
+      return(list(f=f, theta=theta, iter=iter, g=gradient, Hi=invH))} else{ # if this iteration is not converged
+        # firstly judge whether the Hessian is positive definite
+        
+        
+        
+        
+        
+        
+        # calculate the delta using Cholesky decomposition of 
+        # positive definite delta
+        R <- chol(hess)
+        # H * delta = - gradient
+        # t(R) * R * delta = - gradient
+        delta <- backsolve(R, forwardsolve(t(R), -gradient))        
+        # If the step fails to reduce the objective
+        # despite trying max.half step halvings
+        
+        
+        
+        
+        
+        
+        # Update the theta
+        # theta[new] = theta[old] + delta
+        theta <- theta + delta
+        # Update the value of objective function
+        f <- f(theta, ...)
+        # Update the gradient using new theta
+        gradient <- grad(theta, ...)
+        # Update the Hessian matrix
+        hess <- hess(theta, ...)
+        # Update the iteration number
+        iter <- iter + 1
+      }
+  }
+  
+  
+  # Checking the last iteration: whether convergence occurs 
+  if (max(abs(gradient)) < (abs(f)+fscale)*tol){
+    cat("This iteration is converged \n")
+    # Judge whether the Hessian is positive definite
+    decom <- try(chol(hess))
+    # if the try class in error
+    if("try-error" %in% class(fit)){
+      # if the Hessian is not positive definite, give the warning
+      warning("The Hessian is not positive definite 
+              at convergence")
+      } 
+    # Cholesky decomposition of the Hessian 
+    R <- chol(hess) 
+    # solve the H^-1
+    invH <- backsolve(R,forwardsolve(t(R),diag(rep(1,n))))
+    # return a list of containing the converged iteration result
+    return(list(f=f, theta=theta, iter=iter, g=gradient, Hi=invH))}  else {
+      warning(paste(as.character(maxit), " is reached without convergence"))
+  }
+}
+```
+
+
+```{r structure}
+# value of objective function of initial theta
+f <- func(theta, ...)
+# gradient of initial theta
+gradient <- grad(theta, ...)
+# call the Hessian matrix
+hess <- hess(theta, ...)
+
+# iter is the iteration time
+iter <-  0
+# n is the dimension of theta
+n <- length(theta)
+
+while (iter < maxit){
+  if (max(abs(gradient)) < (abs(f)+fscale)*tol){
+    # return sentence to tell now is convergent
+    cat("This iteration is converged \n")
+    # Judge whether the Hessian is positive definite
+    decom <- try(chol(hess))
+    # if the try class in error
+    if("try-error" %in% class(fit)){
+      # if the Hessian is not positive definite, give the warning
+      warning("The Hessian is not positive definite 
+              at convergence")
+    } 
+      # Cholesky decomposition of the Hessian 
+      R <- chol(hess) 
+      # solve the H^-1
+      invH <- backsolve(R,forwardsolve(t(R),diag(rep(1,n))))
+      # return a list of containing the converged iteration result
+      return(list(f=f, theta=theta, iter=iter, g=gradient, Hi=invH))} else{ # if this iteration is not converged
+        # firstly judge whether the Hessian is positive definite
+        
+        
+        
+        
+        
+        
+        # calculate the delta using Cholesky decomposition of 
+        # positive definite delta
+        R <- chol(hess)
+        # H * delta = - gradient
+        # t(R) * R * delta = - gradient
+        delta <- backsolve(R, forwardsolve(t(R), -gradient))        
+        # If the step fails to reduce the objective
+        # despite trying max.half step halvings
+        
+        
+        
+        
+        
+        
+        # Update the theta
+        # theta[new] = theta[old] + delta
+        theta <- theta + delta
+        # Update the value of objective function
+        f <- f(theta, ...)
+        # Update the gradient using new theta
+        gradient <- grad(theta, ...)
+        # Update the Hessian matrix
+        hess <- hess(theta, ...)
+        # Update the iteration number
+        iter <- iter + 1
+      }
+}
+# Checking the last iteration: whether convergence occurs 
+if (max(abs(gradient)) < (abs(f)+fscale)*tol){
+    cat("This iteration is converged \n")
+    # Judge whether the Hessian is positive definite
+    decom <- try(chol(hess))
+    # if the try class in error
+    if("try-error" %in% class(fit)){
+      # if the Hessian is not positive definite, give the warning
+      warning("The Hessian is not positive definite 
+              at convergence")
+    } 
+    # Cholesky decomposition of the Hessian 
+    R <- chol(hess) 
+    # solve the H^-1
+    invH <- backsolve(R,forwardsolve(t(R),diag(rep(1,n))))
+    # return a list of containing the converged iteration result
+    return(list(f=f, theta=theta, iter=iter, g=gradient, Hi=invH))}  else {
+      warning(paste(as.character(maxit), " is reached without convergence"))
+  }
+
+```
