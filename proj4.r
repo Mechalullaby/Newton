@@ -14,10 +14,9 @@
 
 # The function will return an approximation to the Hessian matrix by finite 
 # differencing of the gradient vector when hess=NULL
-null.hess <- function(theta,grad,...){
+null.hess <- function(theta,grad,eps,...){
   
   n <- length(theta)
-  eps <- 1e-6  # finite difference interval
   A <- matrix(0, nrow = n, ncol = n) # empty matrix to prepare for the Hessian
   
   for (i in 1:n){  # loop over paramaters from 1 to length(theta)
@@ -26,10 +25,8 @@ null.hess <- function(theta,grad,...){
     # finite differencing of the gradient
     A[,i] <- (grad(theta1,...) - grad(theta,...)) / eps 
     
-    # make Hessian matrix symmetric
-    hess <- 0.5 * (t(A) + A)  
-    
-    return(hess)
+    # make Hessian matrix symmetric and return
+    return(0.5*(t(A)+A))
   }
 }
 
@@ -78,12 +75,13 @@ newt <- function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
   f <- func(theta, ...)
   # gradient of initial theta
   gradient <- grad(theta, ...)
-  
+
   # call the Hessian matrix
   if (is.null(hess)){ # If Hessian is not provided in newt, namely hess=NULL
-    hess <- null.hess(theta, eps, ...)  # calling null.hess
-  } else {hess <- hess(theta, ...)}
+    H <- null.hess(theta, grad, eps, ...)  # calling null.hess
+  } else {H <- hess(theta, ...)}
   
+
   # judge whether objective or derivatives are finite
   if (is.infinite(f) | any(is.infinite(gradient))){
     stop('The objective or derivatives are not finite at the initial theta.')
@@ -100,36 +98,36 @@ newt <- function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
       cat("This iteration is converged \n")
       
       # Judge whether the Hessian is positive definite
-      decom <- try(chol(hess), silent = T)
+      decom <- try(chol(H), silent = T)
       # if the try class in error
       if("try-error" %in% class(decom)){
-        # if the Hessian is not positive definite, 
-        # give the warning
-        warning("The Hessian is not positive definite 
-              at convergence")
-      } 
-      
-      # Cholesky decomposition of the Hessian 
-      R <- chol(hess) 
-      # solve the H^-1
-      invH <- backsolve(R,forwardsolve(t(R),diag(rep(1,n))))
-      # return a list of containing the converged iteration result
-      return(list(f=f, theta=theta, iter=iter, g=gradient, Hi=invH))
-    } 
+        # if the Hessian is not positive definite, give the warning
+        warning("The Hessian is not positive definite at convergence")
+        # return the list without inverse Hessian
+        return(list(f=f, theta=theta, iter=iter, g=gradient))
+      } else {
+        # Cholesky decomposition of the Hessian 
+        R <- chol(H) 
+        # solve the H^-1
+        invH <- backsolve(R,forwardsolve(t(R),diag(rep(1,n))))
+        # return a list of containing the converged iteration result
+        return(list(f=f, theta=theta, iter=iter, g=gradient, Hi=invH))
+      }
+    }
     # if this iteration is not converged 
     else {  
-      # if hess is not positive definite, perturb it to be so
-      if ('try-error' %in% class(try(chol(hess), silent = T))){
-        # the ceiling of the absolute value of the minimum eigenvalue of hess
+      # if H is not positive definite, perturb it to be so
+      if ('try-error' %in% class(try(chol(H), silent = T))){
+        # the ceiling of the absolute value of the minimum eigenvalue of H
         # in case eigen value might be integer, +0.01
-        lambda <- ceiling(abs(eigen(hess)$values[-1])+0.01)
+        lambda <- ceiling(abs(eigen(H)$values[-1])+0.01)
         # H+lambda*I = t(U)*Lambda*U+lambda*I = t(U)*(Lambda+lambda*I)*U
-        hess <- hess + lambda*diag(nrow(hess))
+        H <- H + lambda*diag(nrow(H))
       }
-        
+      
       # calculate the delta using Cholesky decomposition of 
       # positive definite delta
-      R <- chol(hess)
+      R <- chol(H)
       # H * delta = - gradient
       # t(R) * R * delta = - gradient
       delta <- backsolve(R, forwardsolve(t(R), -gradient))
@@ -149,7 +147,7 @@ newt <- function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
                      as.character(max.half), ' step halvings'))
         }
       }
-        
+      
       # Update the theta
       # theta[new] = theta[old] + delta
       theta <- theta + delta
@@ -158,7 +156,9 @@ newt <- function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
       # Update the gradient using new theta
       gradient <- grad(theta, ...)
       # Update the Hessian matrix
-      hess <- hess(theta, ...)
+      if (is.null(hess)){
+        H <- null.hess(theta, grad, eps, ...)
+      } else {H <- hess(theta, ...)}
       # Update the iteration number
       iter <- iter + 1
     }
@@ -168,19 +168,19 @@ newt <- function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
   if (max(abs(gradient)) < (abs(f)+fscale)*tol){
     cat("This iteration is converged \n")
     # Judge whether the Hessian is positive definite
-    if("try-error" %in% class(try(chol(hess), silent = T))){
+    if("try-error" %in% class(try(chol(H), silent = T))){
       # if the Hessian is not positive definite, give the warning
       warning("The Hessian is not positive definite 
               at convergence")
     } 
     # Cholesky decomposition of the Hessian 
-    R <- chol(hess) 
+    R <- chol(H) 
     # solve the H^-1
     invH <- backsolve(R,forwardsolve(t(R),diag(rep(1,n))))
     # return a list of containing the converged iteration result
     return(list(f=f, theta=theta, iter=iter, g=gradient, Hi=invH))
   } else {
-      warning(paste(as.character(maxit), " is reached without convergence"))
+    warning(paste(as.character(maxit), " is reached without convergence"))
   }
 }
 
@@ -201,8 +201,9 @@ hb <- function(th,k=2) {
   h
 }
 
-newt(c(0,0), rb, gb, maxit = 2)
+newt(c(0,0), rb, gb, maxit = 200)
 
+newt(c(0,0), rb, gb, hb)
 
 
 
