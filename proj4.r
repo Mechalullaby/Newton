@@ -117,7 +117,7 @@ newt <- function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
   
   
   # judge whether objective or derivatives are finite
-  if (is.infinite(f) | any(is.infinite(gradient))){
+  if (is.infinite(f) | any(is.infinite(gradient)) | any(is.infinite(H))){
     stop('The objective or derivatives are not finite at the initial theta.')
   }
   
@@ -175,7 +175,7 @@ newt <- function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
       half_count = 0
       # judge whether the value is reduced
       while (func(theta + delta, ...) > f | is.infinite(f) | 
-             any(is.infinite(gradient))){
+             any(is.infinite(gradient)) | any(is.infinite(H))){
         # havling the delta
         if (half_count < max.half){
           delta <- delta/2
