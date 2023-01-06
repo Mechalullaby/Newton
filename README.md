@@ -1,4 +1,4 @@
-# spproj4_Newton_g13
+# Newton optimizer
 
 
 
